@@ -1,0 +1,29 @@
+[package]
+name = "unisys"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+
+[[bin]]
+name = "unisys"
+path = "src/main.rs"
+
+[[bin]]
+name = "partition"
+path = "src/bin/partition.rs"
+
+[[bin]]
+name = "decompose"
+path = "src/bin/decompose.rs"
+
+[[bin]]
+name = "map"
+path = "src/bin/map.rs"
+
+[[bin]]
+name = "hierarchy"
+path = "src/bin/hierarchy.rs"
