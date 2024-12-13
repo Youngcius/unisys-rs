@@ -1,10 +1,12 @@
 use crate::{c, i, r};
 use ndarray::{array, Array2};
+use super::matrices::Dagger;
 use ndarray_linalg::c64;
 use std::f64::consts::PI;
 
 #[derive(Clone, Debug)]
 pub enum Gate {
+    Univ(UnivGate),
     H(HGate),
     T(TGate),
     TDG(TDGGate),
@@ -24,6 +26,11 @@ pub enum Gate {
     RYY(RYYGate),
     RZZ(RZZGate),
     Can(CanonicalGate),
+}
+
+#[derive(Clone, Debug)]
+pub struct UnivGate {
+    pub untry: Array2<c64>,
 }
 
 #[derive(Clone, Debug)]
@@ -117,6 +124,7 @@ pub struct CanonicalGate {
 impl Gate {
     pub fn name(&self) -> &str {
         match self {
+            Gate::Univ(_) => "Univ",
             Gate::H(_) => "H",
             Gate::T(_) => "T",
             Gate::TDG(_) => "TDG",
@@ -141,6 +149,10 @@ impl Gate {
 
     pub fn n_qubits(&self) -> usize {
         match self {
+            Gate::Univ(univ) => {
+                let n = univ.untry.shape()[0];
+                (n as f64).log2() as usize
+            }
             Gate::H(_) => 1,
             Gate::T(_) => 1,
             Gate::TDG(_) => 1,
@@ -165,6 +177,7 @@ impl Gate {
 
     pub fn angle(&self) -> Result<f64, &str> {
         match self {
+            Gate::Univ(_) => Err("Univ gate has no angle"),
             Gate::H(_) => Err("H gate has no angle"),
             Gate::T(_) => Err("T gate has no angle"),
             Gate::TDG(_) => Err("TDG gate has no angle"),
@@ -189,6 +202,7 @@ impl Gate {
 
     pub fn angles(&self) -> Result<Vec<f64>, &str> {
         match self {
+            Gate::Univ(_) => Err("Univ gate has no angles"),
             Gate::H(_) => Err("H gate has no angles"),
             Gate::T(_) => Err("T gate has no angles"),
             Gate::TDG(_) => Err("TDG gate has no angles"),
@@ -213,6 +227,7 @@ impl Gate {
 
     pub fn data(&self) -> Array2<c64> {
         match self {
+            Gate::Univ(gate) => gate.untry.clone(),
             Gate::H(_) => array![[r!(1.0), r!(1.0)], [r!(1.0), r!(-1.0)]] / 2.0_f64.sqrt(),
             Gate::T(_) => array![
                 [r!(1.0), r!(0.0)],
@@ -340,6 +355,7 @@ impl Gate {
 
     pub fn hermitian(&self) -> Self {
         match self {
+            Gate::Univ(univ) => Gate::Univ(UnivGate {untry: univ.untry.dagger()}),
             Gate::H(_) => Gate::H(HGate {}),
             Gate::T(_) => Gate::T(TGate {}),
             Gate::TDG(_) => Gate::TDG(TDGGate {}),
