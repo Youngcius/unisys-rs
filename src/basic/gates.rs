@@ -5,7 +5,6 @@ use std::f64::consts::PI;
 
 #[derive(Clone, Debug)]
 pub enum Gate {
-    // Constant(ConstantGate),
     H(HGate),
     T(TGate),
     TDG(TDGGate),
