@@ -1,5 +1,5 @@
-
 use super::gates::Gate;
+use std::f64::consts::PI;
 
 #[derive(Clone, Debug)]
 pub struct Operation {
@@ -8,9 +8,25 @@ pub struct Operation {
     pub cqs: Option<Vec<usize>>,
 }
 
-
 impl Operation {
     pub fn new(gate: Gate, tqs: Vec<usize>, cqs: Option<Vec<usize>>) -> Self {
+        if tqs.is_empty() {
+            panic!("Operation must designate target qubit(s)");
+        }
+        if tqs.len() > 1 && tqs.len() != gate.n_qubits() {
+            panic!(
+                "{} must have act on {} target qubits",
+                gate.name(),
+                gate.n_qubits()
+            );
+        }
+        if let Some(cqs) = &cqs {
+            for tq in &tqs {
+                if cqs.contains(tq) {
+                    panic!("Target qubit(s) and control qubit(s) should not be overlapped");
+                }
+            }
+        }
         Operation { gate, tqs, cqs }
     }
 
@@ -31,23 +47,73 @@ impl Operation {
             Err("Operation does not have control qubit")
         }
     }
-    
+
+    // pub fn params(&self) -> Option<Vec<f64>> { }
+
+    pub fn qregs(&self) -> Vec<usize> {
+        let mut qregs = self.tqs.clone();
+        if let Some(cqs) = &self.cqs {
+            qregs.extend(cqs.clone());
+        }
+        qregs
+    }
+
+    // pub fn unitary(&self) -> ndarray::Array2<c64> {
+    //     ...
+    // }
+
     pub fn hermitian(&self) -> Self {
         Operation::new(self.gate.hermitian(), self.tqs.clone(), self.cqs.clone())
     }
 }
 
-
 impl std::fmt::Display for Operation {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match &self.cqs {
-            Some(cqs) => write!(f, "{}({:?} | {:?})", self.gate.name(), self.tqs, cqs),
-            None => write!(f, "{}({:?})", self.gate.name(), self.tqs),
+        // Format target qubits
+        let tqs_str = if self.tqs.len() == 1 {
+            self.tqs[0].to_string()
+        } else {
+            self.tqs
+                .iter()
+                .map(|tq| tq.to_string())
+                .collect::<Vec<_>>()
+                .join("|")
+        };
+
+        let qregs_str = match &self.cqs {
+            Some(cqs) => {
+                // Format control qubits
+                let cqs_str = if cqs.len() == 1 {
+                    cqs[0].to_string()
+                } else {
+                    cqs.iter()
+                        .map(|cq| cq.to_string())
+                        .collect::<Vec<_>>()
+                        .join("|")
+                };
+                format!("{}←{}", tqs_str, cqs_str)
+            }
+            None => format!("{}", tqs_str),
+        };
+
+        // Format angle or angles
+        let mut prefix = self.gate.name().to_string();
+        if let Ok(angles) = self.gate.angles() {
+            let angles_str = angles
+                .iter()
+                .map(|a| format!("{:.2}π", a / PI))
+                .collect::<Vec<_>>()
+                .join(",");
+            prefix += &format!("({})", angles_str);
         }
+
+        if let Ok(angle) = self.gate.angle() {
+            prefix += &format!("({:.2}π)", angle / PI);
+        }
+
+        write!(f, "{}({})", prefix, qregs_str)
     }
 }
-
-
 
 // write code to test Display trait for Operation
 #[cfg(test)]
@@ -58,35 +124,53 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let op = Operation::new(Gate::H(gates::HGate{}), vec![0], None);
-        assert_eq!(format!("{}", op), "H([0])");
+        let op = Operation::new(Gate::H(gates::HGate {}), vec![0], None);
+        assert_eq!(format!("{}", op), "H(0)");
+        println!("{:?}", op);
+        println!("{}", op);
+        println!("tq: {}", op.tq().unwrap());
+        println!("cq: {:?}", op.cq());
+        println!();
+
+        let op = Operation::new(Gate::X(gates::XGate {}), vec![0], Some(vec![1]));
+        assert_eq!(format!("{}", op), "X(0←1)");
+        println!("{:?}", op);
+        println!("{}", op);
+        println!("tq: {}", op.tq().unwrap());
+        println!("cq: {:?}", op.cq().unwrap());
+        println!();
+
+        let op = Operation::new(Gate::RX(gates::RXGate { theta: 1.12313 }), vec![0], None);
         println!("{:?}", op);
         println!("{}", op);
         println!("tq: {}", op.tq().unwrap());
         println!("cq: {:?}", op.cq());
 
-        let op = Operation::new(Gate::X(gates::XGate{}), vec![0], Some(vec![1]));
-        assert_eq!(format!("{}", op), "X([0] | [1])");
+        let op = Operation::new(
+            Gate::Can(gates::CanonicalGate {
+                theta1: 1.1,
+                theta2: 2.2,
+                theta3: 3.3,
+            }),
+            vec![0, 1],
+            vec![2, 3, 4].into(),
+        );
         println!("{:?}", op);
         println!("{}", op);
-        println!("tq: {}", op.tq().unwrap());
-        println!("cq: {:?}", op.cq().unwrap());
-
-        // TODO: print parametrized gates
     }
 
     #[test]
     fn test_hermitian() {
-        let op = Operation::new(Gate::S(gates::SGate{}), vec![0], None);
+        let op = Operation::new(Gate::S(gates::SGate {}), vec![0], None);
         let op_h = op.hermitian();
-        assert_eq!(format!("{}", op_h), "SDG([0])");
-        println!("{}", op_h);
+        println!("{}, {}", op, op_h);
 
-        let op = Operation::new(Gate::X(gates::XGate{}), vec![0], Some(vec![1]));
+        let op = Operation::new(Gate::X(gates::XGate {}), vec![0], Some(vec![1]));
         let op_h = op.hermitian();
-        assert_eq!(format!("{}", op_h), "X([0] | [1])");
-        println!("{}", op_h);
+        println!("{}, {}", op, op_h);
 
-        // TODO: test parametrized gates
+        let op = Operation::new(Gate::RX(gates::RXGate { theta: 1.12313 }), vec![0], None);
+        let op_h = op.hermitian();
+        println!("{}, {}", op, op_h);
     }
 }

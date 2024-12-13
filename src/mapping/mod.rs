@@ -1,2 +1,2 @@
-pub mod heuristic;
 pub mod exact;
+pub mod heuristic;

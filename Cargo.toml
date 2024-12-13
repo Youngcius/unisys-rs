@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 ndarray = "0.16.1"
 ndarray-linalg = "0.16.0"
+ndarray-rand = "0.15.0"
 
 [[bin]]
 name = "unisys"
