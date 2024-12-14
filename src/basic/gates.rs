@@ -368,10 +368,9 @@ impl Gate {
             Gate::U1(gate) => Gate::U1(U1Gate {
                 lambda: -gate.lambda,
             }),
-            Gate::U2(gate) => Gate::U3(U3Gate {
-                theta: -PI / 2.0,
-                phi: -gate.lambda,
-                lambda: -gate.phi,
+            Gate::U2(gate) => Gate::U2(U2Gate {
+                phi: -gate.lambda - PI,
+                lambda: -gate.phi + PI,
             }),
             Gate::U3(gate) => Gate::U3(U3Gate {
                 theta: -gate.theta,
