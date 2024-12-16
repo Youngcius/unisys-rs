@@ -13,11 +13,11 @@ impl Operation {
         if tqs.is_empty() {
             panic!("Operation must designate target qubit(s)");
         }
-        if tqs.len() > 1 && tqs.len() != gate.n_qubits() {
+        if tqs.len() > 1 && tqs.len() != gate.n_qubits {
             panic!(
                 "{} must have act on {} target qubits",
-                gate.name(),
-                gate.n_qubits()
+                gate.to_string(),
+                gate.n_qubits
             );
         }
         if let Some(cqs) = &cqs {
@@ -27,7 +27,7 @@ impl Operation {
                 }
             }
         }
-        Operation { gate, tqs, cqs }
+        Operation { gate: gate, tqs, cqs }
     }
 
     pub fn tq(&self) -> Result<usize, &str> {
@@ -48,8 +48,6 @@ impl Operation {
         }
     }
 
-    // pub fn params(&self) -> Option<Vec<f64>> { }
-
     pub fn qregs(&self) -> Vec<usize> {
         let mut qregs = self.tqs.clone();
         if let Some(cqs) = &self.cqs {
@@ -57,10 +55,6 @@ impl Operation {
         }
         qregs
     }
-
-    // pub fn unitary(&self) -> ndarray::Array2<c64> {
-    //     ...
-    // }
 
     pub fn hermitian(&self) -> Self {
         Operation::new(self.gate.hermitian(), self.tqs.clone(), self.cqs.clone())
@@ -97,19 +91,19 @@ impl std::fmt::Display for Operation {
         };
 
         // Format angle or angles
-        let mut prefix = self.gate.name().to_string();
-        if let Ok(angles) = self.gate.angles() {
-            let angles_str = angles
-                .iter()
-                .map(|a| format!("{:.2}π", a / PI))
-                .collect::<Vec<_>>()
-                .join(",");
-            prefix += &format!("({})", angles_str);
-        }
+        let prefix = self.gate.to_string();
+        // if let Ok(angles) = self.gate.angles() {
+        //     let angles_str = angles
+        //         .iter()
+        //         .map(|a| format!("{:.2}π", a / PI))
+        //         .collect::<Vec<_>>()
+        //         .join(",");
+        //     prefix += &format!("({})", angles_str);
+        // }
 
-        if let Ok(angle) = self.gate.angle() {
-            prefix += &format!("({:.2}π)", angle / PI);
-        }
+        // if let Ok(angle) = self.gate.angle() {
+        //     prefix += &format!("({:.2}π)", angle / PI);
+        // }
 
         write!(f, "{}({})", prefix, qregs_str)
     }
@@ -124,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let op = Operation::new(Gate::H(gates::HGate {}), vec![0], None);
+        let op = Operation::new(Gate::h(), vec![0], None);
         assert_eq!(format!("{}", op), "H(0)");
         println!("{:?}", op);
         println!("{}", op);
@@ -132,7 +126,7 @@ mod tests {
         println!("cq: {:?}", op.cq());
         println!();
 
-        let op = Operation::new(Gate::X(gates::XGate {}), vec![0], Some(vec![1]));
+        let op = Operation::new(Gate::x(), vec![0], Some(vec![1]));
         assert_eq!(format!("{}", op), "X(0←1)");
         println!("{:?}", op);
         println!("{}", op);
@@ -140,18 +134,18 @@ mod tests {
         println!("cq: {:?}", op.cq().unwrap());
         println!();
 
-        let op = Operation::new(Gate::RX(gates::RXGate { theta: 1.12313 }), vec![0], None);
+        let op = Operation::new(Gate::rx( 1.12313 ), vec![0], None);
         println!("{:?}", op);
         println!("{}", op);
         println!("tq: {}", op.tq().unwrap());
         println!("cq: {:?}", op.cq());
 
         let op = Operation::new(
-            Gate::Can(gates::CanonicalGate {
-                theta1: 1.1,
-                theta2: 2.2,
-                theta3: 3.3,
-            }),
+            Gate::can(
+                1.1,
+                2.2,
+                3.3,
+            ),
             vec![0, 1],
             vec![2, 3, 4].into(),
         );
@@ -161,15 +155,15 @@ mod tests {
 
     #[test]
     fn test_hermitian() {
-        let op = Operation::new(Gate::S(gates::SGate {}), vec![0], None);
+        let op = Operation::new(Gate::s(), vec![0], None);
         let op_h = op.hermitian();
         println!("{}, {}", op, op_h);
 
-        let op = Operation::new(Gate::X(gates::XGate {}), vec![0], Some(vec![1]));
+        let op = Operation::new(Gate::x(), vec![0], Some(vec![1]));
         let op_h = op.hermitian();
         println!("{}, {}", op, op_h);
 
-        let op = Operation::new(Gate::RX(gates::RXGate { theta: 1.12313 }), vec![0], None);
+        let op = Operation::new(Gate::rx( 1.12313 ), vec![0], None);
         let op_h = op.hermitian();
         println!("{}, {}", op, op_h);
     }

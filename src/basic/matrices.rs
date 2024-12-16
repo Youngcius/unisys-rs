@@ -1,3 +1,5 @@
+// Extended matrix traits for ndarray
+
 use ndarray::{Array2, ArrayView2};
 use ndarray_linalg::c64;
 

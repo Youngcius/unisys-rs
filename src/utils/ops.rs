@@ -91,12 +91,8 @@ mod tests {
         let theta1 = angles[0];
         let theta2 = angles[1];
         let theta3 = angles[2];
-        let u3 = gates::Gate::U3(gates::U3Gate {
-            theta: theta1,
-            phi: theta2,
-            lambda: theta3,
-        });
-        let mat1 = u3.data();
+        let u3 = gates::Gate::u3(theta1, theta2, theta3);
+        let mat1 = u3.data;
         let phase = i!(1.234).exp();
         let mat2 = &mat1 * phase;
 
