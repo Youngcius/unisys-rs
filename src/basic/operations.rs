@@ -27,7 +27,11 @@ impl Operation {
                 }
             }
         }
-        Operation { gate: gate, tqs, cqs }
+        Operation {
+            gate: gate,
+            tqs,
+            cqs,
+        }
     }
 
     pub fn tq(&self) -> Result<usize, &str> {
@@ -134,21 +138,13 @@ mod tests {
         println!("cq: {:?}", op.cq().unwrap());
         println!();
 
-        let op = Operation::new(Gate::rx( 1.12313 ), vec![0], None);
+        let op = Operation::new(Gate::rx(1.12313), vec![0], None);
         println!("{:?}", op);
         println!("{}", op);
         println!("tq: {}", op.tq().unwrap());
         println!("cq: {:?}", op.cq());
 
-        let op = Operation::new(
-            Gate::can(
-                1.1,
-                2.2,
-                3.3,
-            ),
-            vec![0, 1],
-            vec![2, 3, 4].into(),
-        );
+        let op = Operation::new(Gate::can(1.1, 2.2, 3.3), vec![0, 1], vec![2, 3, 4].into());
         println!("{:?}", op);
         println!("{}", op);
     }
@@ -163,7 +159,7 @@ mod tests {
         let op_h = op.hermitian();
         println!("{}, {}", op, op_h);
 
-        let op = Operation::new(Gate::rx( 1.12313 ), vec![0], None);
+        let op = Operation::new(Gate::rx(1.12313), vec![0], None);
         let op_h = op.hermitian();
         println!("{}, {}", op, op_h);
     }

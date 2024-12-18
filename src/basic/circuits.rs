@@ -1,7 +1,6 @@
-use std::collections::HashSet;
 use super::operations::Operation;
 use ndarray_linalg::c64;
-
+use std::collections::HashSet;
 
 #[derive(Clone, Debug)]
 pub struct Circuit {
@@ -56,8 +55,6 @@ impl Circuit {
         self.qubits().len()
     }
 
-
-    
     pub fn inverse(&self) -> Self {
         let mut ops = Vec::new();
         for op in self.ops.iter().rev() {
@@ -65,5 +62,4 @@ impl Circuit {
         }
         Circuit { ops }
     }
-
 }

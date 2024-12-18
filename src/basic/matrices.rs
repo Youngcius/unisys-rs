@@ -1,6 +1,6 @@
 // Extended matrix traits for ndarray
-use crate::{c, i, r};
 use crate::utils::functions::is_power_of_two;
+use crate::{c, i, r};
 use ndarray::s;
 use ndarray::{Array2, ArrayView2};
 use ndarray_linalg::c64;
@@ -105,7 +105,6 @@ fn kronecker_product(a: &Array2<c64>, b: &Array2<c64>) -> Array2<c64> {
     result
 }
 
-
 // TODO: Implement controlled_matrix function
 // pub fn controlled_matrix(
 //     matrix: &Array2<c64>,
@@ -139,7 +138,6 @@ pub fn tensor_1_slot(u: &Array2<c64>, n: usize, tq: usize) -> Array2<c64> {
     ops.iter().fold(Array2::eye(1), |acc, x| acc.kron(x))
 }
 
-
 pub fn tensor_slots(u: &Array2<c64>, n: usize, indices: &[usize]) -> Array2<c64> {
     let (d1, d2) = u.dim();
     if d1 != d2 {
@@ -147,7 +145,10 @@ pub fn tensor_slots(u: &Array2<c64>, n: usize, indices: &[usize]) -> Array2<c64>
     }
 
     if !is_power_of_two(d1) {
-        panic!("Dimension of input matrix need to be power of 2, but got {}", d1);
+        panic!(
+            "Dimension of input matrix need to be power of 2, but got {}",
+            d1
+        );
     }
     let m = (d1 as f64).log2() as usize;
     if indices.len() != m {
@@ -170,11 +171,11 @@ pub fn tensor_slots(u: &Array2<c64>, n: usize, indices: &[usize]) -> Array2<c64>
         let first = iter.next().unwrap();
         let res = iter.fold(first, |acc, x| kronecker_product(&acc, &x));
 
-
         // Now res is a matrix of dimension (2^n, 2^n), reshape it 2n times (i.e. shape is [2;2*n])
-        let full_shape = vec![2; 2*n];
-        let res = res.into_shape_with_order(full_shape).expect("reshape error");
-
+        let full_shape = vec![2; 2 * n];
+        let res = res
+            .into_shape_with_order(full_shape)
+            .expect("reshape error");
 
         let mut idx = vec![-1; n];
         for (i, &k) in indices.iter().enumerate() {
@@ -206,7 +207,6 @@ pub fn tensor_slots(u: &Array2<c64>, n: usize, indices: &[usize]) -> Array2<c64>
         Array2::from_shape_vec((1 << n, 1 << n), data).expect("from_shape_vec error")
     }
 }
-
 
 #[cfg(test)]
 mod tests {
