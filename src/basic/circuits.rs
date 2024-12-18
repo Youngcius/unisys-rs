@@ -1,6 +1,7 @@
 use super::operations::Operation;
 use ndarray_linalg::c64;
 use std::collections::HashSet;
+use ndarray::Array2;
 
 #[derive(Clone, Debug)]
 pub struct Circuit {
@@ -53,6 +54,11 @@ impl Circuit {
 
     pub fn num_qubits(&self) -> usize {
         self.qubits().len()
+    }
+
+    pub fn unitary(&self) -> Array2<c64> {
+        // TODO: Implement this function
+        Array2::eye(2)
     }
 
     pub fn inverse(&self) -> Self {

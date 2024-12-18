@@ -1,5 +1,6 @@
+use ndarray::Array2;
 use super::gates::Gate;
-use std::f64::consts::PI;
+use ndarray_linalg::c64;
 
 #[derive(Clone, Debug)]
 pub struct Operation {
@@ -58,6 +59,11 @@ impl Operation {
             qregs.extend(cqs.clone());
         }
         qregs
+    }
+
+    pub fn matrix(&self) -> ndarray::Array2<c64> {
+        // self.gate.matrix()
+        Array2::eye(2)
     }
 
     pub fn hermitian(&self) -> Self {

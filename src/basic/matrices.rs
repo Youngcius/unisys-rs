@@ -1,6 +1,6 @@
 // Extended matrix traits for ndarray
 use crate::utils::functions::is_power_of_two;
-use crate::{c, i, r};
+use crate::{c, r};
 use ndarray::s;
 use ndarray::{Array2, ArrayView2};
 use ndarray_linalg::c64;
