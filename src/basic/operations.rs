@@ -1,5 +1,5 @@
-use ndarray::Array2;
 use super::gates::Gate;
+use ndarray::Array2;
 use ndarray_linalg::c64;
 
 #[derive(Clone, Debug)]
@@ -122,8 +122,6 @@ impl std::fmt::Display for Operation {
 // write code to test Display trait for Operation
 #[cfg(test)]
 mod tests {
-    use crate::basic::gates;
-
     use super::*;
 
     #[test]
