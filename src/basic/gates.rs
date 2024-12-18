@@ -340,14 +340,14 @@ impl Gate {
         }
     }
 
-    pub fn can(theta1: f64, theta2: f64, theta3: f64) -> Self {
+    pub fn can(x: f64, y: f64, z: f64) -> Self {
         let zero = r!(0.0);
-        let cosm = (theta1 / 2.0 - theta2 / 2.0).cos();
-        let cosp = (theta1 / 2.0 + theta2 / 2.0).cos();
-        let sinm = (theta1 / 2.0 - theta2 / 2.0).sin();
-        let sinp = (theta1 / 2.0 + theta2 / 2.0).sin();
-        let eim = c!(0.0, -theta3 / 2.0).exp();
-        let eip = c!(0.0, theta3 / 2.0).exp();
+        let cosm = ((x - y) * PI / 2.0).cos();
+        let cosp = ((x + y) * PI / 2.0).cos();
+        let sinm = ((x - y) * PI / 2.0).sin();
+        let sinp = ((x + y) * PI / 2.0).sin();
+        let eim = c!(0.0, -z * PI / 2.0).exp();
+        let eip = c!(0.0, z * PI / 2.0).exp();
         Self {
             gate_type: GateType::Can,
             n_qubits: 2,
@@ -357,7 +357,7 @@ impl Gate {
                 [zero, i!(-1.0) * eip * sinp, eip * cosp, zero],
                 [i!(-1.0) * eim * sinm, zero, zero, eim * cosm]
             ],
-            params: Some(vec![theta1, theta2, theta3]),
+            params: Some(vec![x, y, z]),
         }
     }
 
@@ -398,7 +398,6 @@ impl Gate {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -410,7 +409,6 @@ mod tests {
         // use ndarray generate three random f64
         use ndarray_rand::rand_distr::Uniform;
         use ndarray_rand::RandomExt;
-
 
         // test for U2 gate
         let angles = Array::random((2,), Uniform::new(0.0, 3.0));
@@ -427,11 +425,21 @@ mod tests {
         let theta1 = angles[0];
         let theta2 = angles[1];
         let theta3 = angles[2];
-        let can = Gate::can(theta1, theta2, theta3);
+        let can = Gate::can(theta1 / PI, theta2 / PI, theta3 / PI);
 
         let (rxx, ryy, rzz) = (Gate::rxx(theta1), Gate::ryy(theta2), Gate::rzz(theta3));
         let data1 = can.data;
         let data2 = rxx.data.dot(&ryy.data).dot(&rzz.data);
         assert!(allclose(&data1, &data2));
+    }
+
+    #[test]
+    fn test_aaa() {
+        use ndarray::Array;
+        use ndarray::Array2;
+        let a: Array2<c64> = Array::zeros((3, 2));
+        let b: Array2<c64> = Array2::eye(3);
+        println!("{:?}", a);
+        println!("{}", b);
     }
 }
