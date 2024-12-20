@@ -3,12 +3,16 @@ name = "unisys"
 version = "0.1.0"
 edition = "2021"
 
+#[build]
+#rustflags = ["-L/opt/homebrew/opt/openblas/lib", "-I/opt/homebrew/opt/openblas/include"]
+
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 ndarray = "0.16.1"
-ndarray-linalg = "0.16.0"
 ndarray-rand = "0.15.0"
+ndarray-linalg = "0.16.0"
 
 [[bin]]
 name = "unisys"

@@ -1,9 +1,12 @@
 // Extended matrix traits for ndarray
 use crate::utils::functions::is_power_of_two;
-use crate::{c, r};
-use ndarray::s;
+use crate::{c, i, r};
+use ndarray::{s, Array};
 use ndarray::{Array2, ArrayView2};
 use ndarray_linalg::c64;
+use ndarray_linalg::QR; // 需要启用 ndarray-linalg crate
+use ndarray_rand::rand_distr::Uniform;
+use ndarray_rand::RandomExt;
 
 pub trait Real {
     fn real(&self) -> Array2<f64>;
@@ -104,6 +107,23 @@ fn kronecker_product(a: &Array2<c64>, b: &Array2<c64>) -> Array2<c64> {
 
     result
 }
+
+pub fn random_hermitian(d: usize) -> Array2<c64> {
+    let real_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
+    let imag_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
+    let mat: Array2<c64> = real_part.mapv(|re| r!(re)) + imag_part.mapv(|im| i!(im));
+    (mat.clone() + mat.dagger()) / 2.0
+}
+
+
+// pub fn random_unitary(d: usize) -> Array2<c64> {
+//     let real_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
+//     let imag_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
+//     let mat: Array2<c64> = real_part.mapv(|re| r!(re)) + imag_part.mapv(|im| i!(im));
+//
+//     let (q, _r) = mat.qr().unwrap(); // error in ".qr()": Method `qr` not found in the current scope for type `Array2<Complex64>` [E0599]
+//     q
+// }
 
 // TODO: Implement controlled_matrix function
 // pub fn controlled_matrix(
@@ -213,7 +233,7 @@ mod tests {
     use super::*;
     use crate::basic::gates;
     use crate::utils::ops::allclose;
-    use ndarray::array;
+    use ndarray::{array, Array};
 
     #[test]
     fn test_kronecker_product() {
@@ -279,5 +299,14 @@ mod tests {
         println!();
         println!("{}", desired.real());
         assert!(allclose(&res, &desired));
+    }
+
+    #[test]
+    fn ttt() {
+        // let arr1 =  Array::zeros((2, 2));
+        // println!("{:?}", arr1.raw_dim());
+
+        let mat = random_hermitian(4);
+        println!("{}", mat);
     }
 }
