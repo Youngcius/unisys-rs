@@ -12,7 +12,7 @@ edition = "2021"
 [dependencies]
 ndarray = "0.16.1"
 ndarray-rand = "0.15.0"
-ndarray-linalg = "0.16.0"
+ndarray-linalg = { version = "0.16.0", features = ["openblas"]}
 
 [[bin]]
 name = "unisys"

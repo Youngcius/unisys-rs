@@ -116,14 +116,14 @@ pub fn random_hermitian(d: usize) -> Array2<c64> {
 }
 
 
-// pub fn random_unitary(d: usize) -> Array2<c64> {
-//     let real_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
-//     let imag_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
-//     let mat: Array2<c64> = real_part.mapv(|re| r!(re)) + imag_part.mapv(|im| i!(im));
-//
-//     let (q, _r) = mat.qr().unwrap(); // error in ".qr()": Method `qr` not found in the current scope for type `Array2<Complex64>` [E0599]
-//     q
-// }
+pub fn random_unitary(d: usize) -> Array2<c64> {
+    let real_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
+    let imag_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
+    let mat: Array2<c64> = real_part.mapv(|re| r!(re)) + imag_part.mapv(|im| i!(im));
+
+    let (q, _r) = mat.qr().unwrap(); // error in ".qr()": Method `qr` not found in the current scope for type `Array2<Complex64>` [E0599]
+    q
+}
 
 // TODO: Implement controlled_matrix function
 // pub fn controlled_matrix(
