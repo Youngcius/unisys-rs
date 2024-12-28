@@ -28,11 +28,7 @@ impl Operation {
                 }
             }
         }
-        Operation {
-            gate: gate,
-            tqs,
-            cqs,
-        }
+        Operation { gate, tqs, cqs }
     }
 
     pub fn tq(&self) -> Result<usize, &str> {

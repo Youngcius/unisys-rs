@@ -101,7 +101,7 @@ impl Gate {
         Self {
             gate_type: GateType::Univ,
             n_qubits: (data.shape()[0] as f64).log2() as usize,
-            data: data,
+            data,
             params: None,
         }
     }

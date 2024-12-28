@@ -1,12 +1,13 @@
 // Extended matrix traits for ndarray
+use super::gates::Gate;
 use crate::utils::functions::is_power_of_two;
 use crate::{c, i, r};
 use ndarray::{s, Array};
-use ndarray::{Array2, ArrayView2};
+use ndarray::{Array1, Array2, ArrayView2};
 use ndarray_linalg::c64;
-use ndarray_linalg::QR; // 需要启用 ndarray-linalg crate
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
+use std::f64::consts::PI;
 
 pub trait Real {
     fn real(&self) -> Array2<f64>;
@@ -116,14 +117,78 @@ pub fn random_hermitian(d: usize) -> Array2<c64> {
 }
 
 
-pub fn random_unitary(d: usize) -> Array2<c64> {
-    let real_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
-    let imag_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
-    let mat: Array2<c64> = real_part.mapv(|re| r!(re)) + imag_part.mapv(|im| i!(im));
+// import numpy as np
 
-    let (q, _r) = mat.qr().unwrap(); // error in ".qr()": Method `qr` not found in the current scope for type `Array2<Complex64>` [E0599]
-    q
+// # 自定义采样器，用 sin(theta) 的概率密度函数
+// def sin_sampler(size):
+//     """
+//     根据概率密度函数 f(theta) = 0.5 * sin(theta) 进行采样
+//     使用逆变换采样法生成随机变量
+//     """
+//     # 计算累积分布函数 (CDF) 的反函数
+//     # CDF: F(theta) = -0.5 * cos(theta) + 0.5
+//     # Inverse CDF: F^(-1)(u) = arccos(1 - 2 * u)
+//     uniform_samples = np.random.uniform(size=size)
+//     theta_samples = np.arccos(1 - 2 * uniform_samples)
+//     return theta_samples
+
+fn sin_sampler(size: usize) -> Array1<f64> {
+    let uniform_samples = Array::random(size, Uniform::new(0.0, 1.0));
+    let theta_samples = uniform_samples.mapv(|u| (1.0_f64 - 2.0_f64 * u).acos());
+    theta_samples
 }
+
+
+pub fn random_su2() -> Array2<c64> {
+    // Sampling SU(2) based on Haar random measure
+    // Reference: https://pennylane.ai/qml/demos/tutorial_haar_measure
+    let angles = Array::random((2,), Uniform::new(0.0, 2.0 * PI));
+    let (phi, lambda) = (angles[0], angles[1]);
+    let theta = sin_sampler(1)[0];
+    Gate::u3(theta, phi, lambda).data
+}
+
+// pub fn random_unitary(d: usize) -> Array2<c64> {
+//     // let real_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
+//     // let imag_part: Array2<f64> = Array::random((d, d), Uniform::new(0.0, 1.0));
+//     // let mat: Array2<c64> = real_part.mapv(|re| r!(re)) + imag_part.mapv(|im| i!(im));
+
+//     // let (q, _r) = mat.qr().unwrap(); // error in ".qr()": Method `qr` not found in the current scope for type `Array2<Complex64>` [E0599]
+//     // q
+
+//     // ! Alternatively, we use another construction method
+//     // ! Reference: https://pennylane.ai/qml/demos/tutorial_haar_measure
+//     let mut mat = Array2::zeros((d, d));
+//     for i in 0..d {
+//         for j in 0..d {
+//             mat[[i, j]] = random_su2()[[0, 0]];
+//         }
+//     }
+//     mat
+// }
+
+
+// pub fn random_su4() -> Array2<c64> {
+//     let coord = Array::random((3,), Uniform::new(0.0, 1.0));
+//     let can = Gate::can(coord[0], coord[1], coord[2]).data;
+
+//     let a1_params = Array::random((3,), Uniform::new(0.0, 2.0 * PI));
+//     let a2_params = Array::random((3,), Uniform::new(0.0, 2.0 * PI));
+//     let b1_params = Array::random((3,), Uniform::new(0.0, 2.0 * PI));
+//     let b2_params = Array::random((3,), Uniform::new(0.0, 2.0 * PI));
+
+//     let a1 = Gate::u3(a1_params[0], a1_params[1], a1_params[2]).data;
+//     let a2 = Gate::u3(a2_params[0], a2_params[1], a2_params[2]).data;
+//     let b1 = Gate::u3(b1_params[0], b1_params[1], b1_params[2]).data;
+//     let b2 = Gate::u3(b2_params[0], b2_params[1], b2_params[2]).data;
+
+//     kronecker_product(&a1, &a2)
+//         .dot(&can)
+//         .dot(&kronecker_product(&b1, &b2))
+// }
+
+
+
 
 // TODO: Implement controlled_matrix function
 // pub fn controlled_matrix(
@@ -302,11 +367,27 @@ mod tests {
     }
 
     #[test]
-    fn ttt() {
-        // let arr1 =  Array::zeros((2, 2));
-        // println!("{:?}", arr1.raw_dim());
-
-        let mat = random_hermitian(4);
-        println!("{}", mat);
+    fn test_random_hermitian() {
+        let d = 8;
+        let mat = random_hermitian(d);
+        assert!(allclose(&mat, &mat.dagger()));
     }
+
+    // #[test]
+    // fn test_random_su4() {
+    //     let mat = random_su4();
+    //     let id = Array2::eye(4);
+    //     let prod = mat.dot(&mat.dagger());
+    //     assert!(allclose(&prod, &id));
+    // }
+
+    // #[test]
+    // fn test_random_unitary() {
+    //     let d = 10;
+    //     let mat = random_unitary(d);
+    //     let id = Array2::eye(d);
+    //     let prod = mat.dot(&mat.dagger());
+    //     assert!(allclose(&prod, &id));
+    // }
+
 }

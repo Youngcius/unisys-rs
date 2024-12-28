@@ -1,7 +1,7 @@
 use super::operations::Operation;
+use ndarray::Array2;
 use ndarray_linalg::c64;
 use std::collections::HashSet;
-use ndarray::Array2;
 
 #[derive(Clone, Debug)]
 pub struct Circuit {
