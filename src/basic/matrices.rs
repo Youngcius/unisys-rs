@@ -2,7 +2,7 @@
 use super::gates::Gate;
 use crate::utils::functions::is_power_of_two;
 use crate::{c, i, r};
-use ndarray::{s, Array};
+use ndarray::{array, s, Array};
 use ndarray::{Array1, Array2, ArrayView2};
 use ndarray_linalg::c64;
 use ndarray_rand::rand_distr::Uniform;
@@ -27,6 +27,18 @@ impl Real for ArrayView2<'_, c64> {
 
 pub trait Imag {
     fn imag(&self) -> Array2<f64>;
+}
+
+impl Imag for Array2<c64> {
+    fn imag(&self) -> Array2<f64> {
+        self.mapv(|i| i.im)
+    }
+}
+
+impl Imag for ArrayView2<'_, c64> {
+    fn imag(&self) -> Array2<f64> {
+        self.mapv(|i| i.im)
+    }
 }
 
 // conjugation of a complex matrix
@@ -116,7 +128,6 @@ pub fn random_hermitian(d: usize) -> Array2<c64> {
     (mat.clone() + mat.dagger()) / 2.0
 }
 
-
 // import numpy as np
 
 // # 自定义采样器，用 sin(theta) 的概率密度函数
@@ -137,7 +148,6 @@ fn sin_sampler(size: usize) -> Array1<f64> {
     let theta_samples = uniform_samples.mapv(|u| (1.0_f64 - 2.0_f64 * u).acos());
     theta_samples
 }
-
 
 pub fn random_su2() -> Array2<c64> {
     // Sampling SU(2) based on Haar random measure
@@ -167,7 +177,6 @@ pub fn random_su2() -> Array2<c64> {
 //     mat
 // }
 
-
 // pub fn random_su4() -> Array2<c64> {
 //     let coord = Array::random((3,), Uniform::new(0.0, 1.0));
 //     let can = Gate::can(coord[0], coord[1], coord[2]).data;
@@ -187,31 +196,17 @@ pub fn random_su2() -> Array2<c64> {
 //         .dot(&kronecker_product(&b1, &b2))
 // }
 
+pub fn controlled_unitary_matrix(u: &Array2<c64>, num_ctrl: usize) -> Array2<c64> {
+    let proj_0 = Array2::from_diag(&array![r!(1.0), r!(0.0)]);
+    let proj_1 = Array2::from_diag(&array![r!(0.0), r!(1.0)]);
 
-
-
-// TODO: Implement controlled_matrix function
-// pub fn controlled_matrix(
-//     matrix: &Array2<c64>,
-//     control_qubit: usize,
-//     target_qubit: usize,
-//     num_qubits: usize,
-// ) -> Array2<c64> {
-//     let dim = 1 << num_qubits;
-//     let mut result = Array2::zeros((dim, dim));
-
-//     for i in 0..dim {
-//         let control_bit = (i >> control_qubit) & 1;
-//         let target_bit = (i >> target_qubit) & 1;
-
-//         let index = if control_bit == 1 { 1 } else { 0 };
-//         let j = i ^ (index << target_qubit);
-
-//         result[[i, j]] = matrix[[target_bit, target_bit]];
-//     }
-
-//     result
-// }
+    let mut u = u.clone();
+    for _ in 0..num_ctrl {
+        let ident = Array2::eye(1 << (u.dim().0 as f64).log2() as usize);
+        u = proj_0.kron(&ident) + proj_1.kron(&u);
+    }
+    u
+}
 
 pub fn tensor_1_slot(u: &Array2<c64>, n: usize, tq: usize) -> Array2<c64> {
     if tq >= n {
@@ -284,7 +279,6 @@ pub fn tensor_slots(u: &Array2<c64>, n: usize, indices: &[usize]) -> Array2<c64>
         let idx_usize: Vec<usize> = idx_combined.into_iter().map(|x| x as usize).collect();
 
         // Permute the axes by permuted_axes
-
         let permuted = res.permuted_axes(idx_usize);
 
         // extract all elements from permuted
@@ -299,6 +293,8 @@ mod tests {
     use crate::basic::gates;
     use crate::utils::ops::allclose;
     use ndarray::{array, Array};
+    use ndarray_linalg::assert;
+    // use ndarray_rand::rand_distr::num_traits::zero;
 
     #[test]
     fn test_kronecker_product() {
@@ -364,6 +360,7 @@ mod tests {
         println!();
         println!("{}", desired.real());
         assert!(allclose(&res, &desired));
+        assert_eq!(res, desired);
     }
 
     #[test]
@@ -390,4 +387,19 @@ mod tests {
     //     assert!(allclose(&prod, &id));
     // }
 
+    #[test]
+    fn test_controlled_gate() {
+        let zero = r!(0.0);
+        let one = r!(1.0);
+        let u = array![
+            [one, zero, zero, zero],
+            [zero, one, zero, zero],
+            [zero, zero, zero, one],
+            [zero, zero, one, zero]
+        ];
+        let cx = controlled_unitary_matrix(&Gate::x().data, 1);
+
+        println!("{}", cx);
+        assert!(allclose(&cx, &u));
+    }
 }

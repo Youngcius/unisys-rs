@@ -4,6 +4,8 @@ use ndarray::{array, Array2};
 use ndarray_linalg::c64;
 use std::f64::consts::PI;
 
+// pub const SPECIAL_GATES: [&str; 2] = ["ryy", "can"];
+
 #[derive(Clone, Debug)]
 pub enum GateType {
     Univ,
@@ -358,6 +360,39 @@ impl Gate {
                 [i!(-1.0) * eim * sinm, zero, zero, eim * cosm]
             ],
             params: Some(vec![x, y, z]),
+        }
+    }
+
+    pub fn qasm_def(&self) -> Option<&str> {
+        match self.gate_type {
+            GateType::Ryy => Some(
+                r#"
+gate ryy(param0) q0,q1 {
+    rx(pi/2) q0;
+    rx(pi/2) q1;
+    cx q0, q1;
+    rz(param0) q1;
+    cx q0, q1;
+    rx(-pi/2) q0;
+    rx(-pi/2) q1;
+}
+"#,
+            ),
+            GateType::Can => Some(
+                r#"
+gate can (param0, param1, param2) q0,q1 {
+    u3(1.5*pi, 0.0, 1.5*pi) q0;
+    u3(0.5*pi, 1.5*pi, 0.5*pi) q1;
+    cx q0, q1;
+    u3(1.5*pi, param0*pi + pi, 0.5*pi) q0;
+    u3(pi, 0.0, param1*pi + pi) q1;
+    cx q0, q1;
+    u3(0.5*pi, 0.0, 0.5*pi) q0;
+    u3(0.0, 1.5*pi, param2*pi + 0.5*pi) q1;
+    cx q0, q1;
+}"#,
+            ),
+            _ => None,
         }
     }
 

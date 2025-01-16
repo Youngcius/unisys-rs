@@ -1,7 +1,7 @@
-use super::operations::Operation;
+use super::{gates, matrices, operations::Operation};
 use ndarray::Array2;
 use ndarray_linalg::c64;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug)]
 pub struct Circuit {
@@ -56,9 +56,27 @@ impl Circuit {
         self.qubits().len()
     }
 
+    pub fn gate_stats(&self) -> HashMap<String, usize> {
+        // TODO: review this implementation
+        let mut stats = HashMap::new();
+        for op in &self.ops {
+            let gate_name = op.gate.to_string();
+            let count = stats.entry(gate_name).or_insert(0);
+            *count += 1;
+        }
+        stats
+    }
+
     pub fn unitary(&self) -> Array2<c64> {
-        // TODO: Implement this function
-        Array2::eye(2)
+        let mut u = Array2::<c64>::eye(1 << self.num_qubits());
+        for op in self.ops.iter().rev() {
+            u = u.dot(&matrices::tensor_slots(
+                &op.matrix(),
+                self.num_qubits(),
+                &op.qregs(),
+            ));
+        }
+        u
     }
 
     pub fn inverse(&self) -> Self {
@@ -67,5 +85,90 @@ impl Circuit {
             ops.push(op.hermitian());
         }
         Circuit { ops }
+    }
+
+    pub fn qasm(&self) -> String {
+        let mut qasm_str = String::new();
+
+        // add header
+        qasm_str.push_str(format!("// Date: {}\n", chrono::Utc::now()).as_str());
+        qasm_str.push_str("// Author: Zhaohui Yang\n");
+        qasm_str.push_str("OPENQASM 2.0;\n");
+        qasm_str.push_str("include \"qelib1.inc\";\n\n");
+
+        // add qubits
+        qasm_str.push_str(format!("qreg q[{}];\n\n", self.num_qubits()).as_str());
+
+        // add special gate definitions
+        let defined_gates: HashSet<_> = self
+            .ops
+            .iter()
+            .filter_map(|op| op.gate.qasm_def())
+            .collect();
+        for gate_def in defined_gates {
+            qasm_str.push_str(&format!("{}\n", gate_def));
+        }
+
+        // add operations
+        for op in &self.ops {
+            qasm_str.push_str(&format!("{};\n", op.qasm_cmd()));
+        }
+
+        qasm_str
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use gates::Gate;
+    use matrices::{Imag, Real};
+
+    #[test]
+    fn test_demo_circuit() {
+        // h q[0];
+        // h q[2];
+        // h q[5];
+        // z q[0];
+        // x q[1] q[2];
+        // x q[4] q[5];
+        // x q[0] q[1];
+        // x q[2] q[3];
+        // h q[2];
+        // h q[3];
+        // x q[1] q[2];
+        // x q[3] q[5];
+        // z q[3];
+        // x q[4] q[3];
+        // x q[3] q[0];
+        let mut circ = Circuit::new();
+
+        circ.append(Operation::new(Gate::h(), vec![0], None));
+        circ.append(Operation::new(Gate::h(), vec![2], None));
+        circ.append(Operation::new(Gate::h(), vec![5], None));
+        circ.append(Operation::new(Gate::z(), vec![0], None));
+        circ.append(Operation::new(Gate::x(), vec![2], Some(vec![1])));
+        circ.append(Operation::new(Gate::x(), vec![5], Some(vec![4])));
+        circ.append(Operation::new(Gate::x(), vec![1], Some(vec![0])));
+        circ.append(Operation::new(Gate::x(), vec![3], Some(vec![2])));
+        circ.append(Operation::new(Gate::h(), vec![2], None));
+        circ.append(Operation::new(Gate::h(), vec![3], None));
+        circ.append(Operation::new(Gate::x(), vec![2], Some(vec![1])));
+        circ.append(Operation::new(Gate::x(), vec![5], Some(vec![3])));
+        circ.append(Operation::new(Gate::z(), vec![3], None));
+        circ.append(Operation::new(Gate::x(), vec![3], Some(vec![4])));
+        circ.append(Operation::new(Gate::x(), vec![0], Some(vec![3])));
+
+        println!("{}", circ.qasm());
+
+        println!(
+            "The first row of this unitary's real part is {}",
+            circ.unitary().real().row(0)
+        );
+        println!(
+            "The first row of this unitary's imaginary part is {}",
+            circ.unitary().imag().row(0)
+        );
     }
 }

@@ -1,4 +1,5 @@
 use super::gates::Gate;
+use super::matrices;
 use ndarray::Array2;
 use ndarray_linalg::c64;
 
@@ -50,20 +51,48 @@ impl Operation {
     }
 
     pub fn qregs(&self) -> Vec<usize> {
-        let mut qregs = self.tqs.clone();
+        let mut qregs = Vec::new();
         if let Some(cqs) = &self.cqs {
             qregs.extend(cqs.clone());
         }
+        qregs.extend(self.tqs.clone());
         qregs
     }
 
-    pub fn matrix(&self) -> ndarray::Array2<c64> {
-        // self.gate.matrix()
-        Array2::eye(2)
+    pub fn matrix(&self) -> Array2<c64> {
+        if let Some(cqs) = &self.cqs {
+            matrices::controlled_unitary_matrix(&self.gate.data, cqs.len())
+        } else {
+            self.gate.data.clone()
+        }
     }
 
     pub fn hermitian(&self) -> Self {
         Operation::new(self.gate.hermitian(), self.tqs.clone(), self.cqs.clone())
+    }
+
+    pub fn qasm_cmd(&self) -> String {
+        let mut cmd = self.gate.to_string().to_lowercase();
+        if let Some(cqs) = &self.cqs {
+            cmd = "c".repeat(cqs.len()) + &cmd; // prepend "c" for control
+            cmd += &format!(
+                " {}",
+                cqs.iter()
+                    .map(|cq| format!("q[{}]", cq))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            );
+            cmd += ",";
+        }
+        cmd += &format!(
+            " {}",
+            self.tqs
+                .iter()
+                .map(|tq| format!("q[{}]", tq))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        cmd
     }
 }
 
@@ -162,5 +191,12 @@ mod tests {
         let op = Operation::new(Gate::rx(1.12313), vec![0], None);
         let op_h = op.hermitian();
         println!("{}, {}", op, op_h);
+    }
+
+    #[test]
+    fn test_controlled_gate() {
+        let op = Operation::new(Gate::x(), vec![1], Some(vec![0]));
+        println!("{:?}", op.qasm_cmd());
+        println!("{}", op.matrix());
     }
 }
