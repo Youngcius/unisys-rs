@@ -1,4 +1,5 @@
-use super::{gates, matrices, operations::Operation};
+use super::{gates, operations::Operation};
+use crate::utils::ops;
 use ndarray::Array2;
 use ndarray_linalg::c64;
 use std::collections::{HashMap, HashSet};
@@ -68,15 +69,10 @@ impl Circuit {
     }
 
     pub fn unitary(&self) -> Array2<c64> {
-        let mut u = Array2::<c64>::eye(1 << self.num_qubits());
-        for op in self.ops.iter().rev() {
-            u = u.dot(&matrices::tensor_slots(
-                &op.matrix(),
-                self.num_qubits(),
-                &op.qregs(),
-            ));
-        }
-        u
+        let u = Array2::<c64>::eye(1 << self.num_qubits());
+        self.ops.iter().fold(u, |acc, op| {
+            ops::tensor_slots(&op.matrix(), self.num_qubits(), &op.qregs()).dot(&acc)
+        })
     }
 
     pub fn inverse(&self) -> Self {
@@ -122,8 +118,8 @@ impl Circuit {
 mod tests {
     use super::*;
 
+    use crate::basic::matrices::{Imag, Real};
     use gates::Gate;
-    use matrices::{Imag, Real};
 
     #[test]
     fn test_demo_circuit() {
@@ -142,6 +138,7 @@ mod tests {
         // z q[3];
         // x q[4] q[3];
         // x q[3] q[0];
+
         let mut circ = Circuit::new();
 
         circ.append(Operation::new(Gate::h(), vec![0], None));

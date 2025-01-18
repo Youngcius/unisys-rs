@@ -1,5 +1,5 @@
 use super::gates::Gate;
-use super::matrices;
+use crate::utils::ops;
 use ndarray::Array2;
 use ndarray_linalg::c64;
 
@@ -61,7 +61,7 @@ impl Operation {
 
     pub fn matrix(&self) -> Array2<c64> {
         if let Some(cqs) = &self.cqs {
-            matrices::controlled_unitary_matrix(&self.gate.data, cqs.len())
+            ops::controlled_unitary_matrix(&self.gate.data, cqs.len())
         } else {
             self.gate.data.clone()
         }
