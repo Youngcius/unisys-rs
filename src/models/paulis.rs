@@ -1,20 +1,20 @@
 use crate::basic::circuits::Circuit;
 use crate::basic::gates::Gate;
 use crate::basic::operations::Operation;
-use crate::{c, i, r};
+use crate::{i, r};
 use itertools::izip;
 use ndarray::{array, s, Array1, Array2};
 use ndarray_linalg::c64;
 use std::sync::LazyLock;
 use std::vec;
 
-pub const sigmai: LazyLock<Array2<c64>> =
+pub const I: LazyLock<Array2<c64>> =
     LazyLock::new(|| array![[r!(1.0), r!(0.0)], [r!(0.0), r!(1.0)]]);
-pub const sigmax: LazyLock<Array2<c64>> =
+pub const X: LazyLock<Array2<c64>> =
     LazyLock::new(|| array![[r!(0.0), r!(1.0)], [r!(1.0), r!(0.0)]]);
-pub const sigmay: LazyLock<Array2<c64>> =
+pub const Y: LazyLock<Array2<c64>> =
     LazyLock::new(|| array![[r!(0.0), -i!(1.0)], [i!(1.0), r!(0.0)]]);
-pub const sigmaz: LazyLock<Array2<c64>> =
+pub const Z: LazyLock<Array2<c64>> =
     LazyLock::new(|| array![[r!(1.0), r!(0.0)], [r!(0.0), r!(-1.0)]]);
 
 pub fn pauli_to_bsf_vec(pauli: &String) -> Array1<i8> {
@@ -325,5 +325,13 @@ mod tests {
 
         let circ = bsf.as_cnot_circuit();
         println!("{}", circ.qasm());
+    }
+
+    #[test]
+    fn test_pauli_matrices() {
+        println!("sigmai:\n{}", *I);
+        println!("sigmax:\n{}", *X);
+        println!("sigmay:\n{}", *Y);
+        println!("sigmaz:\n{}", *Z);
     }
 }

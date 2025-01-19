@@ -1,10 +1,8 @@
 // Extended matrix traits for ndarray
 use crate::{c, i, r};
-use ndarray::{array, s, Array};
-use ndarray::{Array1, Array2, ArrayView2};
+use ndarray::{s, Array};
+use ndarray::{Array2, ArrayView2};
 use ndarray_linalg::c64;
-use ndarray_rand::rand_distr::Uniform;
-use ndarray_rand::RandomExt;
 
 pub trait Real {
     fn real(&self) -> Array2<f64>;

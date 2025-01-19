@@ -2,8 +2,8 @@ use crate::basic::gates::Gate;
 use crate::basic::matrices::kronecker_product;
 use crate::basic::matrices::{Dagger, Kronecker};
 use crate::utils::functions::is_power_of_two;
-use crate::{c, i, r};
-use ndarray::{array, s, Array, Array1, Array2};
+use crate::{i, r};
+use ndarray::{array, Array, Array1, Array2};
 use ndarray_linalg::c64;
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
@@ -294,7 +294,7 @@ pub fn tensor_slots(u: &Array2<c64>, n: usize, indices: &[usize]) -> Array2<c64>
 mod tests {
     use super::*;
     use crate::basic::gates;
-    use crate::basic::matrices::{Imag, Real};
+    use crate::basic::matrices::Real;
     use ndarray::Array;
     use ndarray_rand::rand_distr::Uniform;
     use ndarray_rand::RandomExt;
