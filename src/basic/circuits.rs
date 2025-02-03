@@ -1,7 +1,9 @@
-use super::{gates, operations::Operation};
+use super::operations::Operation;
 use crate::utils::ops;
+use crate::utils::passes;
 use ndarray::Array2;
 use ndarray_linalg::c64;
+use core::panic;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug)]
@@ -26,7 +28,11 @@ impl Circuit {
         self.ops.len()
     }
 
-    pub fn max_ops_weight(&self) -> usize {
+    pub fn num_nonlocal_ops(&self) -> usize {
+        self.ops.iter().filter(|op| op.qregs().len() > 1).count()
+    }
+
+    pub fn max_op_weight(&self) -> usize {
         let mut max_weight = 0;
         for op in &self.ops {
             if op.qregs().len() > max_weight {
@@ -57,6 +63,10 @@ impl Circuit {
         self.qubits().len()
     }
 
+    pub fn num_qubits_with_dummy(&self) -> usize {
+        self.qubits().iter().max().unwrap() + 1
+    }
+
     pub fn gate_stats(&self) -> HashMap<String, usize> {
         // TODO: review this implementation
         let mut stats = HashMap::new();
@@ -81,6 +91,10 @@ impl Circuit {
             ops.push(op.hermitian());
         }
         Circuit { ops }
+    }
+
+    pub fn dag(&self) {
+        passes::circuit_to_dag(self);
     }
 
     pub fn qasm(&self) -> String {
@@ -112,14 +126,57 @@ impl Circuit {
 
         qasm_str
     }
+
+    pub fn depth(&self) -> usize {
+        let mut wire_lengths = vec![0; self.num_qubits()];
+        for op in &self.ops {
+            let qubits = op.qregs();
+            let current_depth = qubits.iter().map(|q| wire_lengths[*q]).max().unwrap() + 1;
+            for q in qubits {
+                wire_lengths[q] = current_depth;
+            }
+        }
+        wire_lengths.into_iter().max().unwrap()
+    }
+
+    pub fn depth_nonlocal(&self) -> usize {
+        let mut wire_lengths = vec![0; self.num_qubits()];
+        for op in &self.ops {
+            if op.qregs().len() == 1 {
+                continue;
+            }
+            let qubits = op.qregs();
+            let current_depth = qubits.iter().map(|q| wire_lengths[*q]).max().unwrap() + 1;
+            for q in qubits {
+                wire_lengths[q] = current_depth;
+            }
+        }
+        wire_lengths.into_iter().max().unwrap()
+    }
+
+    pub fn front_layer(&self) -> Vec<Operation> {
+        passes::front_layer(self)
+    }
+
+    pub fn last_layer(&self) -> Vec<Operation> {
+        passes::last_layer(self)
+    }
+
+    pub fn front_full_width_circuit(&self) -> Circuit {
+        passes::front_full_width_circuit(self)
+    }
+
+    pub fn last_full_width_circuit(&self) -> Circuit{
+        passes::last_full_width_circuit(self)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    use crate::basic::gates::Gate;
     use crate::basic::matrices::{Imag, Real};
-    use gates::Gate;
 
     #[test]
     fn test_demo_circuit() {

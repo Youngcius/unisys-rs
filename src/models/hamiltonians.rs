@@ -1,4 +1,3 @@
-
 use std::collections::HashMap;
 
 use super::paulis::BSF;
@@ -32,18 +31,17 @@ impl Hamiltonian {
         }
     }
 
-/*
-    def norm(self) -> float:
-        """Return the norm of the Hamiltonian, i.e., sum of all spectral norms of each iterm"""
-        norm = 0
-        for p, c in zip(self.paulis, self.coeffs):
-            norm += np.abs(c) * linalg.norm(qi.Pauli(p).to_matrix(), 2)
-        return norm
+    /*
+        def norm(self) -> float:
+            """Return the norm of the Hamiltonian, i.e., sum of all spectral norms of each iterm"""
+            norm = 0
+            for p, c in zip(self.paulis, self.coeffs):
+                norm += np.abs(c) * linalg.norm(qi.Pauli(p).to_matrix(), 2)
+            return norm
 
-*/
+    */
 
     // pub fn norm(&self) -> f64 {
-
 
     // }
 
@@ -54,5 +52,4 @@ impl Hamiltonian {
     pub fn group_paulis_and_coeffs(&self) {
         panic!("Not implemented yet");
     }
-
 }

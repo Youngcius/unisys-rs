@@ -1,4 +1,6 @@
+use super::matrices::kronecker_product;
 use super::matrices::Dagger;
+use crate::models::paulis;
 use crate::{c, i, r};
 use ndarray::{array, Array2};
 use ndarray_linalg::c64;
@@ -6,9 +8,9 @@ use std::f64::consts::PI;
 
 // pub const SPECIAL_GATES: [&str; 2] = ["ryy", "can"];
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum GateType {
-    Univ,
+    Univ, // customized unitary gate
     H,
     T,
     Tdg,
@@ -27,7 +29,8 @@ pub enum GateType {
     Rxx,
     Ryy,
     Rzz,
-    Can,
+    Can,             // Canonical gate
+    UCG(Clifford2Q), // universal controlled gate (Clifford2Q)
 }
 
 impl std::fmt::Display for GateType {
@@ -53,6 +56,36 @@ impl std::fmt::Display for GateType {
             GateType::Ryy => write!(f, "Ryy"),
             GateType::Rzz => write!(f, "Rzz"),
             GateType::Can => write!(f, "Can"),
+            GateType::UCG(inner) => write!(f, "{}", inner),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Clifford2Q {
+    CXX,
+    CXY,
+    CXZ,
+    CYX,
+    CYY,
+    CYZ,
+    CZX,
+    CZY,
+    CZZ,
+}
+
+impl std::fmt::Display for Clifford2Q {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Clifford2Q::CXX => write!(f, "Cxx"),
+            Clifford2Q::CXY => write!(f, "Cxy"),
+            Clifford2Q::CXZ => write!(f, "Cxz"),
+            Clifford2Q::CYX => write!(f, "Cyx"),
+            Clifford2Q::CYY => write!(f, "Cyy"),
+            Clifford2Q::CYZ => write!(f, "Cyz"),
+            Clifford2Q::CZX => write!(f, "Czx"),
+            Clifford2Q::CZY => write!(f, "Czy"),
+            Clifford2Q::CZZ => write!(f, "Czz"),
         }
     }
 }
@@ -90,14 +123,14 @@ impl Gate {
         }
     }
 
-    pub fn from_gate(gate: Gate) -> Self {
-        Self {
-            gate_type: gate.gate_type,
-            n_qubits: gate.n_qubits,
-            data: gate.data,
-            params: gate.params,
-        }
-    }
+    // pub fn from_gate(gate: Gate) -> Self {
+    //     Self {
+    //         gate_type: gate.gate_type,
+    //         n_qubits: gate.n_qubits,
+    //         data: gate.data,
+    //         params: gate.params,
+    //     }
+    // }
 
     pub fn univ(data: Array2<c64>) -> Self {
         Self {
@@ -363,6 +396,59 @@ impl Gate {
         }
     }
 
+    pub fn ucg(p0: &str, p1: &str) -> Self {
+        let cliff = match (p0, p1) {
+            ("X", "X") => Clifford2Q::CXX,
+            ("X", "Y") => Clifford2Q::CXY,
+            ("X", "Z") => Clifford2Q::CXZ,
+            ("Y", "X") => Clifford2Q::CYX,
+            ("Y", "Y") => Clifford2Q::CYY,
+            ("Y", "Z") => Clifford2Q::CYZ,
+            ("Z", "X") => Clifford2Q::CZX,
+            ("Z", "Y") => Clifford2Q::CZY,
+            ("Z", "Z") => Clifford2Q::CZZ,
+            _ => panic!("Invalid Pauli operators"),
+        };
+
+        let i: Array2<c64> = paulis::I.clone();
+
+        println!("i is {}", i);
+
+        let p0: Array2<c64> = match p0 {
+            "I" => paulis::I.clone(),
+            "X" => paulis::X.clone(),
+            "Y" => paulis::Y.clone(),
+            "Z" => paulis::Z.clone(),
+            _ => panic!("Invalid Pauli operator"),
+        };
+        let p1: Array2<c64> = match p1 {
+            "I" => paulis::I.clone(),
+            "X" => paulis::X.clone(),
+            "Y" => paulis::Y.clone(),
+            "Z" => paulis::Z.clone(),
+            _ => panic!("Invalid Pauli operator"),
+        };
+
+        println!("p0 is {}", p0);
+        println!("p1 is {}", p1);
+
+        let half = r!(0.5);
+
+        let mat: Array2<c64> = half * kronecker_product(&i, &i)
+            + half * kronecker_product(&p0, &i)
+            + half * kronecker_product(&i, &p1)
+            - half * kronecker_product(&p0, &p1);
+
+        println!("mat is {}", mat);
+
+        Self {
+            gate_type: GateType::UCG(cliff),
+            n_qubits: 2,
+            data: mat,
+            params: None,
+        }
+    }
+
     pub fn qasm_def(&self) -> Option<&str> {
         match self.gate_type {
             GateType::Ryy => Some(
@@ -392,6 +478,93 @@ gate can (param0, param1, param2) q0,q1 {
     cx q0, q1;
 }"#,
             ),
+
+            GateType::UCG(ref cliff) => match cliff {
+                Clifford2Q::CXX => Some(
+                    r#"
+gate cxx a,b {
+h a;
+cx a, b;
+h a;
+}"#,
+                ),
+                Clifford2Q::CXY => Some(
+                    r#"
+gate cxy a,b {
+h a;
+sdg b;
+cx a, b;
+h a;
+s b;
+}"#,
+                ),
+                Clifford2Q::CXZ => Some(
+                    r#"
+gate cxz a,b {
+h a;
+h b;
+cx a, b;
+h a;
+h b;
+}"#,
+                ),
+                Clifford2Q::CYX => Some(
+                    r#"
+gate cyx a,b {
+sdg a;
+h a;
+cx a, b;
+h a;
+s a;
+}"#,
+                ),
+                Clifford2Q::CYY => Some(
+                    r#"
+gate cyy a,b {
+sdg a;
+h a;
+sdg b;
+cx a, b;
+h a;
+s a;
+s b;
+}"#,
+                ),
+                Clifford2Q::CYZ => Some(
+                    r#"
+gate cyz a,b {
+sdg a;
+h a;
+h b;
+cx a, b;
+h a;
+s a;
+h b;
+}"#,
+                ),
+                Clifford2Q::CZX => Some(
+                    r#"
+gate czx a,b {
+cx a, b;
+}"#,
+                ),
+                Clifford2Q::CZY => Some(
+                    r#"
+gate czy a,b {
+sdg b;
+cx a, b;
+s b;
+}"#,
+                ),
+                Clifford2Q::CZZ => Some(
+                    r#"
+gate czz a,b {
+h b;
+cx a, b;
+h b;
+}"#,
+                ),
+            },
             _ => None,
         }
     }
@@ -429,6 +602,7 @@ gate can (param0, param1, param2) q0,q1 {
                 -self.params.as_ref().unwrap()[1],
                 -self.params.as_ref().unwrap()[2],
             ),
+            GateType::UCG(_) => self.clone(),
         }
     }
 }
@@ -476,5 +650,13 @@ mod tests {
         let b: Array2<c64> = Array2::eye(3);
         println!("{:?}", a);
         println!("{}", b);
+    }
+
+    #[test]
+    fn test_ucg() {
+        let g1 = Gate::ucg("X", "X");
+        let g2 = Gate::ucg("Y", "Z");
+        println!("qasm_def of g1 is {}", g1.qasm_def().unwrap());
+        println!("qasm_def of g2 is {}", g2.qasm_def().unwrap());
     }
 }

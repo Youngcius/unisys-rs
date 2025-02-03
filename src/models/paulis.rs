@@ -5,6 +5,7 @@ use crate::{i, r};
 use itertools::izip;
 use ndarray::{array, s, Array1, Array2};
 use ndarray_linalg::c64;
+use std::collections::HashMap;
 use std::sync::LazyLock;
 use std::vec;
 
@@ -16,6 +17,15 @@ pub const Y: LazyLock<Array2<c64>> =
     LazyLock::new(|| array![[r!(0.0), -i!(1.0)], [i!(1.0), r!(0.0)]]);
 pub const Z: LazyLock<Array2<c64>> =
     LazyLock::new(|| array![[r!(1.0), r!(0.0)], [r!(0.0), r!(-1.0)]]);
+
+// pub const SinglePaulis: LazyLock<HashMap<String, Array2<c64>>> = {
+//     let mut m = HashMap::new();
+//     m.insert("I".to_string(), I.lock().clone());
+//     m.insert("X".to_string(), X.lock().clone());
+//     m.insert("Y".to_string(), Y.lock().clone());
+//     m.insert("Z".to_string(), Z.lock().clone());
+//     m
+// }
 
 pub fn pauli_to_bsf_vec(pauli: &String) -> Array1<i8> {
     // e.g. 'XXX' --> [1, 1, 1, 0, 0, 0]
