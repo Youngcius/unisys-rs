@@ -1,7 +1,6 @@
 use crate::basic::circuits::Circuit;
 use crate::basic::operations::Operation;
 
-
 // TODO: 将这些特性都迁移到 circuits.rs 中
 
 pub fn circuit_to_dag(circ: &Circuit) {

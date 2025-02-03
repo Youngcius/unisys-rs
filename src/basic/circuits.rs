@@ -1,9 +1,9 @@
 use super::operations::Operation;
 use crate::utils::ops;
 use crate::utils::passes;
+use core::panic;
 use ndarray::Array2;
 use ndarray_linalg::c64;
-use core::panic;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug)]
@@ -166,7 +166,7 @@ impl Circuit {
         passes::front_full_width_circuit(self)
     }
 
-    pub fn last_full_width_circuit(&self) -> Circuit{
+    pub fn last_full_width_circuit(&self) -> Circuit {
         passes::last_full_width_circuit(self)
     }
 }
