@@ -1,7 +1,7 @@
-use super::matrices::kronecker_product;
 use super::matrices::Dagger;
 use crate::models::paulis;
 use crate::{c, i, r};
+use core::slice;
 use ndarray::{array, Array2};
 use ndarray_linalg::c64;
 use std::f64::consts::PI;
@@ -62,6 +62,13 @@ impl std::fmt::Display for GateType {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum Clifford1Q {
+    H,
+    S,
+    SDG,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Clifford2Q {
     CXX,
     CXY,
@@ -87,6 +94,105 @@ impl std::fmt::Display for Clifford2Q {
             Clifford2Q::CZY => write!(f, "Czy"),
             Clifford2Q::CZZ => write!(f, "Czz"),
         }
+    }
+}
+
+impl Clifford2Q {
+    pub fn variants() -> std::array::IntoIter<Clifford2Q, 9> {
+        [
+            Clifford2Q::CXX,
+            Clifford2Q::CXY,
+            Clifford2Q::CXZ,
+            Clifford2Q::CYX,
+            Clifford2Q::CYY,
+            Clifford2Q::CYZ,
+            Clifford2Q::CZX,
+            Clifford2Q::CZY,
+            Clifford2Q::CZZ,
+        ]
+        .into_iter()
+    }
+
+    pub fn p0(&self) -> &str {
+        match self {
+            Clifford2Q::CXX => "X",
+            Clifford2Q::CXY => "X",
+            Clifford2Q::CXZ => "X",
+            Clifford2Q::CYX => "Y",
+            Clifford2Q::CYY => "Y",
+            Clifford2Q::CYZ => "Y",
+            Clifford2Q::CZX => "Z",
+            Clifford2Q::CZY => "Z",
+            Clifford2Q::CZZ => "Z",
+        }
+    }
+
+    pub fn p1(&self) -> &str {
+        match self {
+            Clifford2Q::CXX => "X",
+            Clifford2Q::CXY => "Y",
+            Clifford2Q::CXZ => "Z",
+            Clifford2Q::CYX => "X",
+            Clifford2Q::CYY => "Y",
+            Clifford2Q::CYZ => "Z",
+            Clifford2Q::CZX => "X",
+            Clifford2Q::CZY => "Y",
+            Clifford2Q::CZZ => "Z",
+        }
+    }
+
+    pub fn wrt_cz(&self) -> (Vec<Clifford1Q>, Vec<Clifford1Q>) {
+        let mut wrt0 = Vec::new();
+        let mut wrt1 = Vec::new();
+        match self.p0() {
+            "X" => {
+                wrt0.push(Clifford1Q::H);
+            }
+            "Y" => {
+                wrt0.push(Clifford1Q::SDG); // inner conjugation
+                wrt0.push(Clifford1Q::H);
+                wrt0.push(Clifford1Q::S); // outer conjugation
+            }
+            _ => {}
+        }
+        match self.p1() {
+            "X" => {
+                wrt1.push(Clifford1Q::H);
+            }
+            "Y" => {
+                wrt1.push(Clifford1Q::SDG);
+                wrt1.push(Clifford1Q::H);
+                wrt1.push(Clifford1Q::S);
+            }
+            _ => {}
+        }
+        (wrt0, wrt1)
+    }
+
+    pub fn wrt_cx(&self) -> (Vec<Clifford1Q>, Vec<Clifford1Q>) {
+        let mut wrt0 = Vec::new();
+        let mut wrt1 = Vec::new();
+        match self.p0() {
+            "X" => {
+                wrt0.push(Clifford1Q::H);
+            }
+            "Y" => {
+                wrt0.push(Clifford1Q::SDG);
+                wrt0.push(Clifford1Q::H);
+                wrt0.push(Clifford1Q::S);
+            }
+            _ => {}
+        }
+        match self.p1() {
+            "Z" => {
+                wrt1.push(Clifford1Q::H);
+            }
+            "Y" => {
+                wrt1.push(Clifford1Q::S);
+            }
+            _ => {}
+        }
+        (wrt0, wrt1)
     }
 }
 
@@ -410,36 +516,14 @@ impl Gate {
             _ => panic!("Invalid Pauli operators"),
         };
 
-        let i: Array2<c64> = paulis::I.clone();
-
-        println!("i is {}", i);
-
-        let p0: Array2<c64> = match p0 {
-            "I" => paulis::I.clone(),
-            "X" => paulis::X.clone(),
-            "Y" => paulis::Y.clone(),
-            "Z" => paulis::Z.clone(),
-            _ => panic!("Invalid Pauli operator"),
-        };
-        let p1: Array2<c64> = match p1 {
-            "I" => paulis::I.clone(),
-            "X" => paulis::X.clone(),
-            "Y" => paulis::Y.clone(),
-            "Z" => paulis::Z.clone(),
-            _ => panic!("Invalid Pauli operator"),
-        };
-
-        println!("p0 is {}", p0);
-        println!("p1 is {}", p1);
+        let i_i = paulis::DoublePaulis[&"II".to_string()].clone();
+        let p0_i = paulis::DoublePaulis[&format!("{}I", p0)].clone();
+        let i_p1 = paulis::DoublePaulis[&format!("I{}", p1)].clone();
+        let p0_p1 = paulis::DoublePaulis[&format!("{}{}", p0, p1)].clone();
 
         let half = r!(0.5);
 
-        let mat: Array2<c64> = half * kronecker_product(&i, &i)
-            + half * kronecker_product(&p0, &i)
-            + half * kronecker_product(&i, &p1)
-            - half * kronecker_product(&p0, &p1);
-
-        println!("mat is {}", mat);
+        let mat: Array2<c64> = half * i_i + half * p0_i + half * i_p1 - half * p0_p1;
 
         Self {
             gate_type: GateType::UCG(cliff),

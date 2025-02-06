@@ -10,11 +10,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ndarray = "0.16.1"
+ndarray = {version = "0.16.1", features = ["rayon"]}
 ndarray-rand = "0.15.0"
 ndarray-linalg = { version = "0.17.0", features = ["openblas"]}
 itertools = "0.14.0"
 chrono = "0.4.39"
+indexmap = "2.7.1"
+rayon = "1.10.0"
+expm = "0.1.1"
+num-traits = "0.2.19"
 
 [[bin]]
 name = "unisys"

@@ -3,24 +3,21 @@ use crate::basic::matrices::kronecker_product;
 use crate::basic::matrices::{Dagger, Kronecker};
 use crate::utils::functions::is_power_of_two;
 use crate::{i, r};
-use ndarray::{array, Array, Array1, Array2, ArrayBase};
+use ndarray::{array, Array, Array1, Array2};
 use ndarray_linalg::c64;
 use ndarray_linalg::QR;
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
 use std::f64::consts::PI;
 
+// TODO: use approx instead
+// TODO: https://rustwiki.org/zh-CN/rust-cookbook/science/mathematics/linear_algebra.html
 pub fn allclose(data1: &Array2<c64>, data2: &Array2<c64>) -> bool {
     let diff = data1 - data2;
     let diff = diff.mapv(|x| x.norm());
     let tol = 1e-8;
     diff.iter().all(|&x| x < tol)
 }
-
-// use ndarray Array2<c64> to compute its matrix trace:
-// pub fn trace(data: &Array2<c64>) -> c64 {
-//     data.diag().sum()
-// }
 
 pub fn match_global_phase(a: Array2<c64>, b: Array2<c64>) -> (Array2<c64>, Array2<c64>) {
     // If the shapes are different or either is empty, return copies
@@ -81,6 +78,16 @@ pub fn match_global_phase(a: Array2<c64>, b: Array2<c64>) -> (Array2<c64>, Array
 pub fn equiv_unitary(data1: &Array2<c64>, data2: &Array2<c64>) -> bool {
     let (data1, data2) = match_global_phase(data1.clone(), data2.clone());
     allclose(&data1, &data2)
+}
+
+pub fn is_unitary(data: &Array2<c64>) -> bool {
+    let id = Array2::eye(data.dim().0);
+    let prod = data.dot(&data.dagger());
+    allclose(&prod, &id)
+}
+
+pub fn is_hermitian(data: &Array2<c64>) -> bool {
+    allclose(&data, &data.dagger())
 }
 
 pub fn random_hermitian(d: usize) -> Array2<c64> {
@@ -259,6 +266,7 @@ mod tests {
     use crate::basic::gates;
     use crate::basic::matrices::Real;
     use ndarray::Array;
+    use ndarray_linalg::Trace;
     use ndarray_rand::rand_distr::Uniform;
     use ndarray_rand::RandomExt;
 
@@ -326,9 +334,10 @@ mod tests {
 
     #[test]
     fn test_random_hermitian() {
-        let d = 8;
-        let mat = random_hermitian(d);
-        assert!(allclose(&mat, &mat.dagger()));
+        // let d = 8;
+        let mat = random_hermitian(8);
+        assert!(is_hermitian(&mat));
+        println!("trace is {}", mat.trace().unwrap());
     }
 
     #[test]
@@ -343,22 +352,16 @@ mod tests {
     fn test_random_unitary() {
         // SU(2)
         let mat = random_su2();
-        let id = Array2::eye(2);
-        let prod = mat.dot(&mat.dagger());
-        assert!(allclose(&prod, &id));
+        assert!(is_unitary(&mat));
 
         // SU(4)
         let mat = random_su4();
-        let id = Array2::eye(4);
-        let prod = mat.dot(&mat.dagger());
-        assert!(allclose(&prod, &id));
+        assert!(is_unitary(&mat));
 
         // SU(10)
         let d = 10;
         let mat = random_unitary(d);
-        let id = Array2::eye(d);
-        let prod = mat.dot(&mat.dagger());
-        assert!(allclose(&prod, &id));
+        assert!(is_unitary(&mat));
     }
 
     #[test]

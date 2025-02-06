@@ -24,6 +24,10 @@ impl Circuit {
         self.ops.insert(0, op);
     }
 
+    pub fn compose(&mut self, other: &Circuit) {
+        self.ops.extend(other.ops.clone());
+    }
+
     pub fn num_ops(&self) -> usize {
         self.ops.len()
     }
