@@ -2,7 +2,6 @@ pub mod basic;
 pub mod decompose;
 pub mod mapping;
 pub mod models;
-pub mod partition;
 pub mod phoenix;
 pub mod transforms;
 pub mod utils;

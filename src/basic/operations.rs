@@ -10,26 +10,48 @@ pub struct Operation {
     pub cqs: Option<Vec<usize>>,
 }
 
-impl Operation {
-    pub fn new(gate: Gate, tqs: Vec<usize>, cqs: Option<Vec<usize>>) -> Self {
-        if tqs.is_empty() {
-            panic!("Operation must designate target qubit(s)");
-        }
-        if tqs.len() > 1 && tqs.len() != gate.n_qubits {
-            panic!(
-                "{} must have act on {} target qubits",
-                gate.to_string(),
-                gate.n_qubits
-            );
-        }
-        if let Some(cqs) = &cqs {
-            for tq in &tqs {
-                if cqs.contains(tq) {
-                    panic!("Target qubit(s) and control qubit(s) should not be overlapped");
-                }
+pub fn check_tqs_and_cqs(gate: &Gate, tqs: &Vec<usize>, cqs: &Option<Vec<usize>>) {
+    if tqs.is_empty() {
+        panic!("Operation must designate target qubit(s)");
+    }
+    if tqs.len() > 1 && tqs.len() != gate.n_qubits {
+        panic!(
+            "{} must have act on {} target qubits",
+            gate.to_string(),
+            gate.n_qubits
+        );
+    }
+    if let Some(cqs) = &cqs {
+        for tq in tqs {
+            if cqs.contains(tq) {
+                panic!("Target qubit(s) and control qubit(s) should not be overlapped");
             }
         }
+    }
+}
+
+impl Operation {
+    pub fn new(gate: Gate, tqs: Vec<usize>, cqs: Option<Vec<usize>>) -> Self {
+        check_tqs_and_cqs(&gate, &tqs, &cqs);
         Operation { gate, tqs, cqs }
+    }
+
+    pub fn controlled_by(&self, cqs: Vec<usize>) -> Self {
+        // the cqs of the new operation is the union of the cqs of the current operation and the input cqs
+        let mut new_cqs = self.cqs.clone().unwrap_or_default();
+        new_cqs.extend(cqs);
+        new_cqs.sort_unstable();
+        Operation::new(self.gate.clone(), self.tqs.clone(), Some(new_cqs))
+    }
+
+    pub fn reapply(&self, tqs: Vec<usize>, cqs: Option<Vec<usize>>) -> Self {
+        check_tqs_and_cqs(&self.gate, &tqs, &cqs);
+        if let Some(cqs) = &cqs {
+            if cqs.len() != self.cqs.as_ref().unwrap().len() {
+                panic!("Control qubits must have the same number of qubits when reapplying");
+            }
+        }
+        Operation::new(self.gate.clone(), tqs, cqs)
     }
 
     pub fn tq(&self) -> Result<usize, &str> {
@@ -151,7 +173,8 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let op = Operation::new(Gate::h(), vec![0], None);
+        // let op = Operation::new(Gate::h(), vec![0], None);
+        let op = Gate::h().on(vec![0]);
         assert_eq!(format!("{}", op), "H(0)");
         println!("{:?}", op);
         println!("{}", op);
@@ -159,7 +182,8 @@ mod tests {
         println!("cq: {:?}", op.cq());
         println!();
 
-        let op = Operation::new(Gate::x(), vec![0], Some(vec![1]));
+        // let op = Operation::new(Gate::x(), vec![0], Some(vec![1]));
+        let op = Gate::x().on(vec![0]).controlled_by(vec![1]);
         assert_eq!(format!("{}", op), "X(0←1)");
         println!("{:?}", op);
         println!("{}", op);
@@ -167,7 +191,8 @@ mod tests {
         println!("cq: {:?}", op.cq().unwrap());
         println!();
 
-        let op = Operation::new(Gate::rx(1.12313), vec![0], None);
+        // let op = Operation::new(Gate::rx(1.12313), vec![0], None);
+        let op = Gate::rx(1.12313).on(vec![0]);
         println!("{:?}", op);
         println!("{}", op);
         println!("tq: {}", op.tq().unwrap());
@@ -195,7 +220,8 @@ mod tests {
 
     #[test]
     fn test_controlled_gate() {
-        let op = Operation::new(Gate::x(), vec![1], Some(vec![0]));
+        // let op = Operation::new(Gate::x(), vec![1], Some(vec![0]));
+        let op = Gate::x().on(vec![1]).controlled_by(vec![0]);
         println!("{:?}", op.qasm_cmd());
         println!("{}", op.matrix());
     }

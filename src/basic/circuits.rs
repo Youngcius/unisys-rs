@@ -89,6 +89,16 @@ impl Circuit {
         })
     }
 
+    pub fn rewire(&self, mapping: HashMap<usize, usize>) -> Self {
+        let mut rewired_circ = Circuit::new();
+        for op in &self.ops {
+            let tqs = op.tqs.iter().map(|tq| mapping[tq]).collect();
+            let cqs = op.cqs.as_ref().map(|cqs| cqs.iter().map(|cq| mapping[cq]).collect());
+            rewired_circ.append(op.reapply(tqs, cqs))
+        }
+        rewired_circ
+    }
+
     pub fn inverse(&self) -> Self {
         let mut ops = Vec::new();
         for op in self.ops.iter().rev() {
@@ -106,7 +116,6 @@ impl Circuit {
 
         // add header
         qasm_str.push_str(format!("// Date: {}\n", chrono::Utc::now()).as_str());
-        qasm_str.push_str("// Author: Zhaohui Yang\n");
         qasm_str.push_str("OPENQASM 2.0;\n");
         qasm_str.push_str("include \"qelib1.inc\";\n\n");
 
@@ -156,6 +165,10 @@ impl Circuit {
             }
         }
         wire_lengths.into_iter().max().unwrap()
+    }
+
+    pub fn layer(&self) -> Vec<Vec<Operation>> {
+        panic!("Not implemented yet")
     }
 
     pub fn front_layer(&self) -> Vec<Operation> {

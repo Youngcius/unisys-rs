@@ -1,7 +1,7 @@
 use super::matrices::Dagger;
+use super::operations::Operation;
 use crate::models::paulis;
 use crate::{c, i, r};
-use core::slice;
 use ndarray::{array, Array2};
 use ndarray_linalg::c64;
 use std::f64::consts::PI;
@@ -228,6 +228,11 @@ impl Gate {
             params: None,
         }
     }
+
+    pub fn on(&self, tqs: Vec<usize>) -> Operation {
+        Operation::new(self.clone(), tqs, None)
+    }
+
 
     // pub fn from_gate(gate: Gate) -> Self {
     //     Self {
