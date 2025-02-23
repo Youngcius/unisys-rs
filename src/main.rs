@@ -36,11 +36,20 @@
 // }
 
 use ndarray::{s, Array1, Array2, Zip};
+use ndarray_linalg::c64;
 use ndarray_rand::rand;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use std::time::Instant;
-use unisys::{basic::gates::Clifford2Q, models::paulis::BSF, phoenix::simplification};
+use unisys::{
+    basic::gates::Gate,
+    utils::ops::{self, allclose, equiv_unitary},
+};
+use unisys::{
+    basic::{gates::Clifford2Q, matrices},
+    models::paulis::BSF,
+    phoenix::simplification,
+};
 
 fn test_for_loop() {
     let mut matrix = Array2::from_shape_vec((10000, 9), (0..90000).collect()).unwrap();
@@ -429,6 +438,33 @@ fn test_aaa() {
     println!("{:?}", array);
 }
 
+fn test_fold() {
+    let dim = 200;
+    let mut matrices = Vec::new();
+    for _ in 0..500 {
+        matrices.push(ops::random_unitary(dim));
+    }
+
+    // use fold primitive
+    let start = Instant::now();
+    let u = matrices
+        .iter()
+        .fold(Array2::<c64>::eye(dim), |acc, op| op.dot(&acc));
+    let duration = start.elapsed();
+    println!("Duration (fold): {:?}", duration);
+
+    // use for-loop
+    let start = Instant::now();
+    let mut v = Array2::<c64>::eye(dim);
+    for op in matrices.iter() {
+        v = op.dot(&v);
+    }
+    let duration = start.elapsed();
+    println!("Duration (for-loop): {:?}", duration);
+
+    assert!(equiv_unitary(&u, &v));
+}
+
 fn main() {
     // 行列交换 by for-loop
     test_for_loop();
@@ -444,4 +480,16 @@ fn main() {
     // test_simplify_bsf_large();
 
     // test_aaa();
+
+    // test_fold();
+
+    fn process_input<T: Into<String>>(input: T) {
+        let s = input.into();
+        // 处理字符串 s
+        println!("s = {}", s);
+    }
+
+    process_input("hello"); // &str 类型
+    process_input(String::from("world")); // String 类型
+    process_input(Gate::s().on(vec![0]).to_string()); // 其他能转换为 String 的类型
 }

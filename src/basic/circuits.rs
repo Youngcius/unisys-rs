@@ -93,7 +93,10 @@ impl Circuit {
         let mut rewired_circ = Circuit::new();
         for op in &self.ops {
             let tqs = op.tqs.iter().map(|tq| mapping[tq]).collect();
-            let cqs = op.cqs.as_ref().map(|cqs| cqs.iter().map(|cq| mapping[cq]).collect());
+            let cqs = op
+                .cqs
+                .as_ref()
+                .map(|cqs| cqs.iter().map(|cq| mapping[cq]).collect());
             rewired_circ.append(op.reapply(tqs, cqs))
         }
         rewired_circ

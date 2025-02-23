@@ -233,7 +233,6 @@ impl Gate {
         Operation::new(self.clone(), tqs, None)
     }
 
-
     // pub fn from_gate(gate: Gate) -> Self {
     //     Self {
     //         gate_type: gate.gate_type,

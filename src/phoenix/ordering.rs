@@ -4,20 +4,20 @@ use ndarray_linalg::c64;
 use crate::basic::circuits::Circuit;
 
 /*
-    if num_qubits is None:
-        num_qubits = circ.num_qubits_with_dummy
-    left_end = np.full(num_qubits, -1)
-    circ_part = front_full_width_circuit(circ, lambda g: g.num_qregs > 1)
-    for num_layer, layer in enumerate(circ_part.layer()):
-        for q in reduce(add, [g.qregs for g in layer]):
-            if left_end[q] < 0:
-                left_end[q] = num_layer
-        if np.all(left_end >= 0):
-            break
-    left_end[left_end == -1] = left_end.max() + 1
-    return left_end
-     */
-pub fn left_end_empty_layer(circ: &Circuit, num_qubits: Option<usize>) -> Array1<usize>{
+if num_qubits is None:
+    num_qubits = circ.num_qubits_with_dummy
+left_end = np.full(num_qubits, -1)
+circ_part = front_full_width_circuit(circ, lambda g: g.num_qregs > 1)
+for num_layer, layer in enumerate(circ_part.layer()):
+    for q in reduce(add, [g.qregs for g in layer]):
+        if left_end[q] < 0:
+            left_end[q] = num_layer
+    if np.all(left_end >= 0):
+        break
+left_end[left_end == -1] = left_end.max() + 1
+return left_end
+ */
+pub fn left_end_empty_layer(circ: &Circuit, num_qubits: Option<usize>) -> Array1<usize> {
     let mut n = circ.num_qubits_with_dummy();
     if let Some(num_qubits) = num_qubits {
         n = num_qubits;
@@ -36,15 +36,12 @@ pub fn left_end_empty_layer(circ: &Circuit, num_qubits: Option<usize>) -> Array1
     //     }
     // }
 
-
-
-    left_end.mapv(|x| x as usize) 
+    left_end.mapv(|x| x as usize)
 }
 
-
 pub fn depth_overhead(lhs: &Array1<usize>, rhs: &Array1<usize>) -> usize {
-    let lhs_bool : Array1<bool> = lhs.mapv(|x| x == 0); // herein we use x == 0 instead of x != 0
-    let rhs_bool : Array1<bool> = rhs.mapv(|x| x == 0);
+    let lhs_bool: Array1<bool> = lhs.mapv(|x| x == 0); // herein we use x == 0 instead of x != 0
+    let rhs_bool: Array1<bool> = rhs.mapv(|x| x == 0);
     let xor: Array1<bool> = lhs_bool.clone() ^ rhs_bool.clone();
     let condition = lhs_bool | rhs_bool;
     let filtered_xor = Zip::from(&xor)
@@ -56,7 +53,6 @@ pub fn depth_overhead(lhs: &Array1<usize>, rhs: &Array1<usize>) -> usize {
         (lhs + rhs).sum()
     }
 }
-
 
 #[cfg(test)]
 mod tests {

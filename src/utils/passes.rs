@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::basic::circuits::Circuit;
 use crate::basic::operations::Operation;
 
@@ -29,4 +31,12 @@ pub fn last_full_width_circuit(circ: &Circuit) -> Circuit {
     let mut lfwc = Circuit::new();
 
     lfwc
+}
+
+pub fn mirror_near_identity(
+    circ: &Circuit,
+    init_mapping: &HashMap<usize, usize>,
+    kak_norm_threshold: f64,
+) -> (Circuit, HashMap<usize, usize>, HashMap<usize, usize>) {
+    panic!("Not implemented")
 }
