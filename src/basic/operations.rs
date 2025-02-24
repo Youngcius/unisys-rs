@@ -3,7 +3,7 @@ use crate::utils::ops;
 use ndarray::Array2;
 use ndarray_linalg::c64;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Operation {
     pub gate: Gate,
     pub tqs: Vec<usize>,

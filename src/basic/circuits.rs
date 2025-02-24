@@ -1,9 +1,11 @@
+use super::gates::GateType;
 use super::operations::Operation;
 use crate::utils::ops;
 use crate::utils::passes;
 use core::panic;
 use ndarray::Array2;
 use ndarray_linalg::c64;
+use rustworkx_core::petgraph::prelude::StableDiGraph;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug)]
@@ -71,6 +73,10 @@ impl Circuit {
         self.qubits().iter().max().unwrap() + 1
     }
 
+    pub fn gate_count(&self, gate_type: GateType) -> usize {
+        self.ops.iter().filter(|op| op.gate.gate_type == gate_type).count()
+    }
+
     pub fn gate_stats(&self) -> HashMap<String, usize> {
         // TODO: review this implementation
         let mut stats = HashMap::new();
@@ -89,7 +95,7 @@ impl Circuit {
         })
     }
 
-    pub fn rewire(&self, mapping: HashMap<usize, usize>) -> Self {
+    pub fn rewire(&self, mapping: &HashMap<usize, usize>) -> Self {
         let mut rewired_circ = Circuit::new();
         for op in &self.ops {
             let tqs = op.tqs.iter().map(|tq| mapping[tq]).collect();
@@ -110,7 +116,7 @@ impl Circuit {
         Circuit { ops }
     }
 
-    pub fn dag(&self) {
+    pub fn dag(&self) -> StableDiGraph<Operation, ()> {
         passes::circuit_to_dag(self);
     }
 
@@ -170,15 +176,15 @@ impl Circuit {
         wire_lengths.into_iter().max().unwrap()
     }
 
-    pub fn layer(&self) -> Vec<Vec<Operation>> {
+    pub fn layer(&self) -> Vec<Vec<&Operation>> {
         panic!("Not implemented yet")
     }
 
-    pub fn front_layer(&self) -> Vec<Operation> {
+    pub fn front_layer(&self) -> Vec<&Operation> {
         passes::front_layer(self)
     }
 
-    pub fn last_layer(&self) -> Vec<Operation> {
+    pub fn last_layer(&self) -> Vec<&Operation> {
         passes::last_layer(self)
     }
 

@@ -196,7 +196,7 @@ impl Clifford2Q {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Gate {
     pub gate_type: GateType,
     pub n_qubits: usize,
