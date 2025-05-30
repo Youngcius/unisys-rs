@@ -18,6 +18,7 @@ impl std::fmt::Display for SimpItem {
 }
 
 pub fn config_to_circuit(config: Vec<SimpItem>) -> Circuit {
+    // TODO: make this function parallel
     let mut circ = Circuit::new();
     for item in config {
         match item {

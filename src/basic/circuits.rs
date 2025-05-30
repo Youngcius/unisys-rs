@@ -5,7 +5,7 @@ use crate::utils::passes;
 use core::panic;
 use ndarray::Array2;
 use ndarray_linalg::c64;
-use rustworkx_core::petgraph::prelude::StableDiGraph;
+// use rustworkx_core::petgraph::prelude::StableDiGraph;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug)]
@@ -74,7 +74,10 @@ impl Circuit {
     }
 
     pub fn gate_count(&self, gate_type: GateType) -> usize {
-        self.ops.iter().filter(|op| op.gate.gate_type == gate_type).count()
+        self.ops
+            .iter()
+            .filter(|op| op.gate.gate_type == gate_type)
+            .count()
     }
 
     pub fn gate_stats(&self) -> HashMap<String, usize> {
@@ -116,9 +119,9 @@ impl Circuit {
         Circuit { ops }
     }
 
-    pub fn dag(&self) -> StableDiGraph<Operation, ()> {
-        passes::circuit_to_dag(self);
-    }
+    // pub fn dag(&self) -> StableDiGraph<Operation, ()> {
+    //     passes::circuit_to_dag(self)
+    // }
 
     pub fn qasm(&self) -> String {
         let mut qasm_str = String::new();
